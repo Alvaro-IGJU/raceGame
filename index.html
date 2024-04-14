@@ -7,8 +7,24 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <canvas id="myCanvas" width="200" height="100"></canvas>
-    <script type="module" src="Car.js"></script>
-    <script src="canvas.js"></script>
+    <!-- <canvas id="myCanvas" width="200" height="100"></canvas> -->
+    <!-- <script src="canvas.js"></script> -->
+    <div id="init-container">
+        <h1>RACE GAME</h1>
+        <button id="createRace">Crear partida</button>
+       
+        <button id="searchRace">Buscar partida</button><input type="text" name="" id="searchInput">
+    </div>
+
+    <div id="waiting-players-container">
+        <h1>Esperando jugadores</h1>
+        <span><b>ID de la carrera:</b></span>
+        <p id="game_id"></p>
+        <div id="playersList">
+
+        </div>
+        <button id="startRace">¡Empezar carrera!</button>
+    </div>
+    <script src="client.js"></script>
 </body>
 </html>

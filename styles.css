@@ -1,7 +1,68 @@
 body{
     width: 100%;
+    height: 700px;
 }
-#myCanvas{
-    width: 700px;
+
+#init-container{
+    margin: auto;
+    width: 30%;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 10px 10px  black;
     border: 1px solid black;
+    margin-top: 20%;
+}
+
+#init-container > button{
+    box-shadow: 10px 10px  black;
+    border-radius: 1px;
+    margin-top: 7%;
+    height: 50px;
+    width: 40%;
+}
+button:hover{
+    cursor: pointer;
+}
+
+#init-container > input{
+    border: 1px solid black ;
+    margin-top: 5%;
+    margin-bottom: 5%;
+    height:40px;
+    width: 70%;
+    box-shadow: 10px 10px  black;
+}
+
+#waiting-players-container{
+    display: none;
+    margin: auto;
+    width: 30%;
+    height: 350px;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 10px 10px  black;
+    border: 1px solid black;
+    margin-top: 20%;
+}
+#waiting-players-container > button{
+    box-shadow: 10px 10px  black;
+    border-radius: 1px;
+    margin-top: 7%;
+    margin-bottom: 5%;
+    height: 50px;
+    width: 40%;
+}
+#playersList{
+    height: 40%;
+    width: 70%;
+    border: 1px solid black;
+}
+#playersList > span{
+    margin: auto;
+}
+#waiting-players-container > button{
+    margin-top: 5%;
+
 }
