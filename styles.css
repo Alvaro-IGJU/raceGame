@@ -1,0 +1,7 @@
+body{
+    width: 100%;
+}
+#myCanvas{
+    width: 700px;
+    border: 1px solid black;
+}
