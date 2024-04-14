@@ -44,13 +44,13 @@ button:hover{
     align-items: center;
     box-shadow: 10px 10px  black;
     border: 1px solid black;
-    margin-top: 20%;
+    margin-top: 10%;
 }
 #waiting-players-container > button{
     box-shadow: 10px 10px  black;
     border-radius: 1px;
-    margin-top: 7%;
-    margin-bottom: 5%;
+    /* margin-top: 7%; */
+    /* margin-bottom: 5%; */
     height: 50px;
     width: 40%;
 }
@@ -65,6 +65,27 @@ button:hover{
 }
 
 #waiting-players-container > button{
-    margin-top: 5%;
+    box-shadow: 10px 10px  black;
+    border-radius: 1px;
+    margin-top: 7%;
+    height: 50px;
+    width: 40%;
 
+}
+
+#race-canvas-container{
+    display: none;
+    margin: auto;
+    width: 800px;
+    height: 600px;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 10px 10px  black;
+    border: 1px solid black;
+    margin-top: 10%;
+}
+
+#race-canvas-container> canvas{
+    height: 600px;
+    width: 800px;
 }
