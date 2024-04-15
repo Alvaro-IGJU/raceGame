@@ -1,3 +1,6 @@
+const canvasWidth = 270; // Ancho del canvas (ajústalo según tus necesidades)
+const canvasHeight = 150; // Altura del canvas (ajústalo según tus necesidades)
+
 class Player {
     constructor(playerId, playerName, playerColor) {
         this.playerId = playerId;
@@ -7,18 +10,18 @@ class Player {
         this.y = 110;
         this.width = 30;
         this.height = 30;
-        this.speed = 0;
+        this.speed = 5;
     }
 
     getX() {
-        return this.x
+        return this.x;
     }
     setX(x) {
         this.x = x;
     }
 
     getY() {
-        return this.y
+        return this.y;
     }
     setY(y) {
         this.y = y;
@@ -52,7 +55,6 @@ class Game {
     }
 
     start() {
-        let canvasWidth = 270; // Ancho del canvas (ajústalo según tus necesidades)
         let playerWidth = 30; // Ancho de cada jugador (ajústalo según tus necesidades)
         let playerCount = this.getPlayers().length;
         let spaceBetweenPlayers = (canvasWidth - playerWidth * playerCount) / (playerCount + 1); // Espacio entre cada jugador
@@ -70,7 +72,7 @@ class Game {
         this.running = true;
         this.interval = setInterval(() => {
             this.sendGameInfo();
-        }, 1); // Intervalo de 1 milisegundo (ajústalo según tus necesidades)
+        }, 16); // Intervalo de 16 milisegundos (aproximadamente 60 FPS)
     }
 
     finish() {
@@ -99,7 +101,6 @@ class Game {
         });
     }
 }
-
 
 const WebSocket = require('websocket').server;
 const http = require('http');
@@ -190,7 +191,7 @@ wsServer.on('request', (request) => {
                 // Envía un mensaje a todos los jugadores del juego indicando que la carrera ha comenzado
                 if (!game.isRunning()) {
                     game.start();
-                    const startMessage = { type: 'race_start' };
+                    const startMessage = { type: 'race_start' , game_id: data.game_id};
                     game.players.forEach(player => {
                         const playerConnection = connections.find(conn => conn.playerId === player.playerId);
                         if (playerConnection) {
@@ -198,9 +199,16 @@ wsServer.on('request', (request) => {
                         }
                     });
                 }
+            }
+        } else if (data.type === 'game_action') {
+            let game = findGameById(data.game_id);
+            let player = game.getPlayers().find(player => player.playerId === connection.playerId);
 
-
-
+            if (game && player) {
+                // Envía un mensaje a todos los jugadores del juego indicando que la carrera ha comenzado
+                if (game.isRunning()) {
+                    handleGameAction(game, player, data.keysPressed);
+                }
             }
         }
     });
@@ -230,4 +238,92 @@ function assignColor(numPlayers) {
         default:
             return "red";
     }
+}
+
+function handleGameAction(game, player, keysPressed) {
+    // Aquí implementa la lógica para manejar las acciones del juego según las teclas presionadas
+    if (keysPressed['w'] || keysPressed['ArrowUp']) {
+        movePlayer(player, 'up');
+    }
+    if (keysPressed['a'] || keysPressed['ArrowLeft']) {
+        movePlayer(player, 'left');
+    }
+    if (keysPressed['s'] || keysPressed['ArrowDown']) {
+        movePlayer(player, 'down');
+    }
+    if (keysPressed['d'] || keysPressed['ArrowRight']) {
+        movePlayer(player, 'right');
+    }
+    
+    // Envía la información actualizada del juego a todos los jugadores
+    game.sendGameInfo();
+}
+
+function movePlayer(player, direction) {
+    // Verificar la dirección y ajustar la posición del jugador en consecuencia
+    switch (direction) {
+        case 'up':
+            if (player.getY() - player.speed >= 0 && !checkCollision(player, 'up')) {
+                player.setY(player.getY() - player.speed);
+            }
+            break;
+        case 'down':
+            if (player.getY() + player.speed <= canvasHeight - player.height && !checkCollision(player, 'down')) {
+                player.setY(player.getY() + player.speed);
+            }
+            break;
+        case 'left':
+            if (player.getX() - player.speed >= 0 && !checkCollision(player, 'left')) {
+                player.setX(player.getX() - player.speed);
+            }
+            break;
+        case 'right':
+            if (player.getX() + player.speed <= canvasWidth && !checkCollision(player, 'right')) {
+                player.setX(player.getX() + player.speed);
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+function checkCollision(player, direction) {
+    // Calcular la posición futura del jugador según la dirección y la velocidad
+    let futureX = player.getX();
+    let futureY = player.getY();
+    switch (direction) {
+        case 'up':
+            futureY -= player.speed;
+            break;
+        case 'down':
+            futureY += player.speed;
+            break;
+        case 'left':
+            futureX -= player.speed;
+            break;
+        case 'right':
+            futureX += player.speed;
+            break;
+        default:
+            break;
+    }
+
+    // Verificar la colisión del jugador con otros jugadores en el juego
+    for (let i = 0; i < games.length; i++) {
+        const otherPlayers = games[i].getPlayers().filter(otherPlayer => otherPlayer.playerId !== player.playerId);
+        for (let j = 0; j < otherPlayers.length; j++) {
+            const otherPlayer = otherPlayers[j];
+            if (
+                futureX < otherPlayer.getX() + otherPlayer.width &&
+                futureX + player.width > otherPlayer.getX() &&
+                futureY < otherPlayer.getY() + otherPlayer.height &&
+                futureY + player.height > otherPlayer.getY()
+            ) {
+                // Hay colisión con otro jugador
+                return true;
+            }
+        }
+    }
+    // No hay colisión con otros jugadores
+    return false;
 }

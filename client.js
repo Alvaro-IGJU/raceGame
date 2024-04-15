@@ -9,9 +9,16 @@ const playersList = document.getElementById('playersList');
 const errorSearchMessage = document.getElementById('errorSearch');
 var canvas;
 var ctx;
+
+const keysPressed = {
+    'w': false,
+    'a': false,
+    's': false,
+    'd': false
+};
+
 socket.onopen = function (evt) {
     console.log("Conectado al servidor WebSocket");
-
 }
 
 socket.onmessage = function (evt) {
@@ -45,28 +52,44 @@ socket.onmessage = function (evt) {
     } else if (data.type == "game_full") {
         errorSearchMessage.innerHTML = `<span style="color:red; font-weight:bold;  ">La partida está llena</span>`
     } else if (data.type == "race_start") {
-        console.log("race_start")
         initContainer.style.display = "none";
         waitingPlayersContainer.style.display = "none";
         raceCanvasContainer.style.display = "block";
         canvas = document.getElementById('myCanvas');
         ctx = canvas.getContext('2d');
-    }else if (data.type == "game_info") {
+
+        document.addEventListener("keydown", (e) => {
+            e.preventDefault();
+            // Verificar si la tecla presionada es una de las teclas que deseas enviar al servidor
+            if (['w', 'a', 's', 'd', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                // Marcar la tecla como presionada
+                keysPressed[e.key] = true;
+                // Si la tecla presionada es válida, enviar los datos al servidor
+                const gameData = { type: 'game_action', keysPressed: keysPressed, game_id: data.game_id };
+                socket.send(JSON.stringify(gameData));
+            }
+        });
+
+        document.addEventListener("keyup", (e) => {
+            e.preventDefault();
+            // Verificar si la tecla liberada es una de las teclas que deseas enviar al servidor
+            if (['w', 'a', 's', 'd', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                // Marcar la tecla como no presionada
+                keysPressed[e.key] = false;
+                // Si la tecla liberada es válida, enviar los datos al servidor
+                const gameData = { type: 'game_action', keysPressed: keysPressed, game_id: data.game_id };
+                socket.send(JSON.stringify(gameData));
+            }
+        });
+    } else if (data.type == "game_info") {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         data.players.forEach(player => {
-            console.log(player.playerColor)
-            console.log(player.x)
-            console.log(player.y)
-            console.log(player.width)
-            console.log(player.height)
+        
             ctx.fillStyle = player.playerColor;
             ctx.fillRect(player.x, player.y, player.width, player.height);
         });
-       
     }
 }
-
-
 
 // Obtener input por ID
 const searchInput = document.getElementById('searchInput');
