@@ -33,17 +33,62 @@ class Player {
     }
 }
 
+class Obstacle {
+    constructor(x,color) {
+      
+        this.color = color;
+        this.x = x;
+        this.y = 0;
+        this.width = 30;
+        this.height = 30;
+        this.speed = 1;
+    }
+
+    getX() {
+        return this.x;
+    }
+    setX(x) {
+        this.x = x;
+    }
+
+    getY() {
+        return this.y;
+    }
+    setY(y) {
+        this.y = y;
+    }
+    move() {
+        // Mover el obstáculo hacia abajo
+        this.y += this.speed;
+    }
+}
+
 class Game {
     constructor(gameId) {
         this.uuid = gameId;
+        console.log(gameId)
         this.players = [];
         this.obstacles = [];
         this.running = false;
         this.interval = null; // Intervalo para enviar la información del juego a los jugadores
+        this.obstacleInterval = setInterval(() => {
+            this.addRandomObstacle();
+        }, 5000); // Agrega un obstáculo cada 5 segundos
     }
 
     addPlayer(player) {
         this.players.push(player);
+    }
+    addRandomObstacle() {
+        // Generar una posición aleatoria para el obstáculo
+        const x = Math.floor(Math.random() * canvasWidth);
+
+        // Agregar el obstáculo al array de obstáculos
+        const obstacle = new Obstacle(x, "black");
+        this.obstacles.push(obstacle);
+    }
+    getObstacles() {
+        return this.obstacles;
     }
 
     getPlayers() {
@@ -89,9 +134,15 @@ class Game {
     sendGameInfo() {
         const gameData = {
             type: 'game_info',
-            players: this.getPlayers() // Obtener la información de los jugadores del juego
+            players: this.getPlayers(), // Obtener la información de los jugadores del juego
+            obstacles: this.getObstacles() // Obtener la información de los jugadores del juego
             // Puedes agregar más información del juego si es necesario
         };
+
+        for (let i = 0; i < this.obstacles.length; i++) {
+            const obstacle = this.obstacles[i];
+            obstacle.move();
+        }
 
         this.players.forEach(player => {
             const playerConnection = connections.find(conn => conn.playerId === player.playerId);

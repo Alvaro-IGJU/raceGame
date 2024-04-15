@@ -33,7 +33,6 @@ socket.onmessage = function (evt) {
         startBtn.textContent = "¡Empezar partida!"
         startBtn.addEventListener("click", () => {
             const dataSend = { type: 'startRace', game_id: data.game_id };
-            console.log("startRace")
             socket.send(JSON.stringify(dataSend));
         })
         waitingPlayersContainer.appendChild(startBtn)
@@ -87,6 +86,11 @@ socket.onmessage = function (evt) {
         
             ctx.fillStyle = player.playerColor;
             ctx.fillRect(player.x, player.y, player.width, player.height);
+        });
+        data.obstacles.forEach(obstacle => {
+            console.log(obstacle.color)
+            ctx.fillStyle = obstacle.color;
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
         });
     }
 }
