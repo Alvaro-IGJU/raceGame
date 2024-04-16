@@ -7,7 +7,7 @@ class Player {
         this.playerName = playerName;
         this.playerColor = playerColor;
         this.x = 50;
-        this.y = 110;
+        this.y = 90;
         this.width = 30;
         this.height = 50;
         this.speed = 5;
@@ -38,7 +38,7 @@ class Obstacle {
       
         this.color = color;
         this.x = x;
-        this.y = 0;
+        this.y = -20;
         this.width = 30;
         this.height = 30;
         this.speed = 1;
