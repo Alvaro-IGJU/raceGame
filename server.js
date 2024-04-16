@@ -9,7 +9,7 @@ class Player {
         this.x = 50;
         this.y = 110;
         this.width = 30;
-        this.height = 30;
+        this.height = 50;
         this.speed = 5;
     }
 

@@ -82,17 +82,26 @@ socket.onmessage = function (evt) {
         });
     } else if (data.type == "game_info") {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.imageSmoothingEnabled = false;
         data.players.forEach(player => {
-        
-            ctx.fillStyle = player.playerColor;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
+            // Crear una nueva imagen
+            let playerImg = new Image();
+            // Asignar la ruta de la imagen
+            playerImg.src = player.playerColor+'.png'; // Reemplaza 'red.png' por la ruta de tu imagen
+            
+            // Cuando la imagen termine de cargar, dibujarla en el canvas
+
+                // Dibujar la imagen en el canvas ajustando su tamaño al ancho y alto del jugador
+                ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
         });
+        
         data.obstacles.forEach(obstacle => {
             console.log(obstacle.color)
             ctx.fillStyle = obstacle.color;
             ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
         });
     }
+    
 }
 
 // Obtener input por ID
