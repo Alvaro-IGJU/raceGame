@@ -10,7 +10,7 @@ class Player {
         this.y = 90;
         this.width = 30;
         this.height = 50;
-        this.speed = 5;
+        this.speed =2;
     }
 
     getX() {
@@ -375,6 +375,25 @@ function checkCollision(player, direction) {
             }
         }
     }
-    // No hay colisión con otros jugadores
+
+    // Verificar la colisión del jugador con los obstáculos en el juego
+    for (let i = 0; i < games.length; i++) {
+        const obstacles = games[i].getObstacles();
+        for (let j = 0; j < obstacles.length; j++) {
+            const obstacle = obstacles[j];
+            if (
+                futureX < obstacle.x + obstacle.width &&
+                futureX + player.width > obstacle.x &&
+                futureY < obstacle.y + obstacle.height &&
+                futureY + player.height > obstacle.y
+            ) {
+                // Hay colisión con un obstáculo
+                return true;
+            }
+        }
+    }
+
+    // No hay colisión con otros jugadores ni con obstáculos
     return false;
 }
+
