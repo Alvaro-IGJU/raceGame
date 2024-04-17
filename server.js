@@ -77,6 +77,14 @@ class Game {
         this.obstacles = [];
         this.running = false;
         this.interval = null; // Intervalo para enviar la información del juego a los jugadores
+        this.roadCount = 1;
+        this.roadInterval = setInterval(() => {
+            if(this.roadCount == 1 ){
+                this.roadCount = 2;
+            }else{
+                this.roadCount = 1;
+            }
+        }, 60);
         this.obstacleInterval = setInterval(() => {
             this.addRandomObstacle();
         }, 5000); // Agrega un obstáculo cada 5 segundos
@@ -85,6 +93,24 @@ class Game {
     addPlayer(player) {
         player.setGameId(this.uuid)
         this.players.push(player);
+    }
+    removePlayer(player) {
+        const index = this.players.indexOf(player);
+        if (index !== -1) {
+            this.players.splice(index, 1);
+
+            // Verificar si no quedan más jugadores en el juego
+            if (this.players.length === 0) {
+                // Buscar el índice del juego en el array de juegos
+                clearInterval(this.roadInterval);
+                clearInterval(this.obstacles);
+                const gameIndex = games.indexOf(this);
+                if (gameIndex !== -1) {
+                    // Eliminar el juego del array de juegos
+                    games.splice(gameIndex, 1);
+                }
+            }
+        }
     }
     addRandomObstacle() {
         // Generar una posición aleatoria para el obstáculo
@@ -150,10 +176,10 @@ class Game {
         const gameData = {
             type: 'game_info',
             players: this.getPlayers(), // Obtener la información de los jugadores del juego
-            obstacles: this.getObstacles() // Obtener la información de los jugadores del juego
+            obstacles: this.getObstacles(), // Obtener la información de los jugadores del juego
+            roadCount: this.roadCount
             // Puedes agregar más información del juego si es necesario
         };
-        console.log(this.getObstacles().length)
         for (let i = 0; i < this.obstacles.length; i++) {
             const obstacle = this.obstacles[i];
             if(obstacle.getY() < canvasHeight){
@@ -176,6 +202,7 @@ const WebSocket = require('websocket').server;
 const http = require('http');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const { count } = require('console');
 
 const server = http.createServer((request, response) => {
     response.writeHead(404);
@@ -223,10 +250,15 @@ wsServer.on('request', (request) => {
                     // Si el jugador ha alcanzado la parte inferior del canvas, detener el intervalo
                     if (disconnectedPlayer.getY() >= canvasHeight) {
                         clearInterval(descentInterval);
+                        game.removePlayer(disconnectedPlayer);
+                        console.log("Players", game.getPlayers().length)
+                        console.log("Games", games.length)
+
                     }
                 }, 50); // Ajusta el intervalo según la velocidad deseada de descenso
             }
         }
+
         // Buscar y eliminar la partida en la que se encuentra el jugador que se desconecta
         const index = connections.indexOf(connection);
         if (index !== -1) {
