@@ -9,6 +9,11 @@ const playersList = document.getElementById('playersList');
 const errorSearchMessage = document.getElementById('errorSearch');
 var canvas;
 var ctx;
+let road1Img = new Image();
+road1Img.src = 'road1.png';
+let road2Img = new Image();
+road2Img.src = 'road2.png';
+let roadCount = 1;
 let redCarImg = new Image();
 redCarImg.src = 'red.png'; 
 let blueCarImg = new Image();
@@ -94,6 +99,14 @@ socket.onmessage = function (evt) {
     } else if (data.type == "game_info") {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.imageSmoothingEnabled = false;
+        if(roadCount == 1){
+            roadCount = 2;
+            ctx.drawImage(road2Img,0, 0, canvas.width, canvas.height);
+        }else{
+            roadCount = 1;
+            ctx.drawImage(road1Img,0, 0, canvas.width, canvas.height);
+
+        }
         
         // Dibujar los obstáculos primero
         data.obstacles.forEach(obstacle => {
