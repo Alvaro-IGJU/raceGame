@@ -206,7 +206,7 @@ class Game {
                     shiftedRoad.y = this.roads[this.roads.length - 1].y - canvasHeight;
                     this.roads.push(shiftedRoad);
                 }
-            },100/this.velocity);
+            },50/this.velocity);
         },)
         
     }
