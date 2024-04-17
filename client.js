@@ -14,7 +14,9 @@ let road1Img = new Image();
 road1Img.src = 'road1.png';
 let road2Img = new Image();
 road2Img.src = 'road2.png';
-
+let obstacleImg = new Image();
+// Asignar la ruta de la imagen
+obstacleImg.src = 'obstacle.png'; // Reemplaza 'obstacle.png' por la ruta de tu imagen
 let redCarImg = new Image();
 redCarImg.src = 'red.png'; 
 let blueCarImg = new Image();
@@ -77,9 +79,13 @@ socket.onmessage = function (evt) {
         document.addEventListener("keydown", (e) => {
             e.preventDefault();
             // Verificar si la tecla presionada es una de las teclas que deseas enviar al servidor
-            if (['w', 'a', 's', 'd', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+            if (['w','W', 'a','A', 's','S', 'd','D', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
                 // Marcar la tecla como presionada
-                keysPressed[e.key] = true;
+                let key = e.key
+                if(key =='W' || key =='A' || key =='S' || key=='D' ){
+                    key = key.toLowerCase();
+                }
+                keysPressed[key] = true;
                 // Si la tecla presionada es válida, enviar los datos al servidor
                 const gameData = { type: 'game_action', keysPressed: keysPressed, game_id: data.game_id };
                 socket.send(JSON.stringify(gameData));
@@ -87,12 +93,16 @@ socket.onmessage = function (evt) {
         });
         
         document.addEventListener("keyup", (e) => {
-            e.preventDefault();
-            // Verificar si la tecla liberada es una de las teclas que deseas enviar al servidor
-            if (['w', 'a', 's', 'd', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                // Marcar la tecla como no presionada
-                keysPressed[e.key] = false;
-                // Si la tecla liberada es válida, enviar los datos al servidor
+             e.preventDefault();
+            // Verificar si la tecla presionada es una de las teclas que deseas enviar al servidor
+            if (['w','W', 'a','A', 's','S', 'd','D', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                // Marcar la tecla como presionada
+                let key = e.key
+                if(key =='W' || key =='A' || key =='S' || key=='D' ){
+                    key = key.toLowerCase();
+                }
+                keysPressed[key] = false;
+                // Si la tecla presionada es válida, enviar los datos al servidor
                 const gameData = { type: 'game_action', keysPressed: keysPressed, game_id: data.game_id };
                 socket.send(JSON.stringify(gameData));
             }
@@ -109,9 +119,7 @@ socket.onmessage = function (evt) {
         
         // Dibujar los obstáculos primero
         data.obstacles.forEach(obstacle => {
-            let obstacleImg = new Image();
-            // Asignar la ruta de la imagen
-            obstacleImg.src = 'obstacle.png'; // Reemplaza 'obstacle.png' por la ruta de tu imagen
+          
             
             // Cuando la imagen termine de cargar, dibujarla en el canvas
             // Dibujar la imagen en el canvas ajustando su tamaño al ancho y alto del obstáculo

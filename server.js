@@ -46,8 +46,8 @@ class Obstacle {
         this.x = x;
         this.y = -20;
         this.width = 30;
-        this.height = 30;
-        this.speed = 1;
+        this.height = 50;
+        this.speed = 10;
     }
     
     getX() {
