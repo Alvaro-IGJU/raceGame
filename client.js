@@ -9,6 +9,14 @@ const playersList = document.getElementById('playersList');
 const errorSearchMessage = document.getElementById('errorSearch');
 var canvas;
 var ctx;
+let redCarImg = new Image();
+redCarImg.src = 'red.png'; 
+let blueCarImg = new Image();
+blueCarImg.src = 'blue.png'; 
+let greenCarImg = new Image();
+greenCarImg.src = 'green.png'; 
+let yellowCarImg = new Image();
+yellowCarImg.src = 'yellow.png'; 
 
 const keysPressed = {
     'w': false,
@@ -51,13 +59,15 @@ socket.onmessage = function (evt) {
     } else if (data.type == "game_full") {
         errorSearchMessage.innerHTML = `<span style="color:red; font-weight:bold;  ">La partida está llena</span>`
     } else if (data.type == "race_start") {
+        console.log(data)
+        
         initContainer.style.display = "none";
         waitingPlayersContainer.style.display = "none";
         raceCanvasContainer.style.display = "block";
         canvas = document.getElementById('myCanvas');
         // canvas.width = window.innerWidth; canvas.height = window.innerHeight;
         ctx = canvas.getContext('2d');
-
+        
         document.addEventListener("keydown", (e) => {
             e.preventDefault();
             // Verificar si la tecla presionada es una de las teclas que deseas enviar al servidor
@@ -69,7 +79,7 @@ socket.onmessage = function (evt) {
                 socket.send(JSON.stringify(gameData));
             }
         });
-
+        
         document.addEventListener("keyup", (e) => {
             e.preventDefault();
             // Verificar si la tecla liberada es una de las teclas que deseas enviar al servidor
@@ -84,28 +94,36 @@ socket.onmessage = function (evt) {
     } else if (data.type == "game_info") {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.imageSmoothingEnabled = false;
-    
+        
         // Dibujar los obstáculos primero
         data.obstacles.forEach(obstacle => {
             let obstacleImg = new Image();
             // Asignar la ruta de la imagen
             obstacleImg.src = 'obstacle.png'; // Reemplaza 'obstacle.png' por la ruta de tu imagen
-    
+            
             // Cuando la imagen termine de cargar, dibujarla en el canvas
-                // Dibujar la imagen en el canvas ajustando su tamaño al ancho y alto del obstáculo
-                ctx.drawImage(obstacleImg, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            // Dibujar la imagen en el canvas ajustando su tamaño al ancho y alto del obstáculo
+            ctx.drawImage(obstacleImg, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
         });
-    
+        
         // Luego, dibujar los jugadores
         data.players.forEach(player => {
-            let playerImg = new Image();
+            let playerImg;
+            if(player.playerColor == "red"){
+                playerImg = redCarImg;
+            }else if(player.playerColor == "blue"){
+                playerImg = blueCarImg;
+            }else if(player.playerColor == "green"){
+                playerImg = greenCarImg;
+            }else if(player.playerColor == "yellow"){
+                playerImg = yellowCarImg;
+            }
             // Asignar la ruta de la imagen
-            playerImg.src = player.playerColor + '.png'; // Reemplaza 'red.png' por la ruta de tu imagen
-    
+            
             // Cuando la imagen termine de cargar, dibujarla en el canvas
-        
-                // Dibujar la imagen en el canvas ajustando su tamaño al ancho y alto del jugador
-                ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
+            
+            // Dibujar la imagen en el canvas ajustando su tamaño al ancho y alto del jugador
+            ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
         });
     }
     

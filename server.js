@@ -11,6 +11,7 @@ class Player {
         this.width = 30;
         this.height = 50;
         this.speed =2;
+        this.gameId = null;
     }
     
     getX() {
@@ -26,7 +27,12 @@ class Player {
     setY(y) {
         this.y = y;
     }
-    
+    getGameId(){
+        return this.gameId;
+    }
+    setGameId(gameId){
+        this.gameId = gameId;
+    }
     draw(ctx) {
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -77,6 +83,7 @@ class Game {
     }
     
     addPlayer(player) {
+        player.setGameId(this.uuid)
         this.players.push(player);
     }
     addRandomObstacle() {
@@ -86,6 +93,14 @@ class Game {
         // Agregar el obstáculo al array de obstáculos
         const obstacle = new Obstacle(x, "black");
         this.obstacles.push(obstacle);
+    }
+    destroyObstacle(obstacle) {
+        // Buscar el índice del obstáculo en el array de obstáculos
+        const index = this.obstacles.indexOf(obstacle);
+        if (index !== -1) {
+            // Eliminar el obstáculo del array de obstáculos
+            this.obstacles.splice(index, 1);
+        }
     }
     getObstacles() {
         return this.obstacles;
@@ -138,10 +153,14 @@ class Game {
             obstacles: this.getObstacles() // Obtener la información de los jugadores del juego
             // Puedes agregar más información del juego si es necesario
         };
-        
+        console.log(this.getObstacles().length)
         for (let i = 0; i < this.obstacles.length; i++) {
             const obstacle = this.obstacles[i];
-            obstacle.move();
+            if(obstacle.getY() < canvasHeight){
+                obstacle.move();
+            }else{
+                this.destroyObstacle(obstacle)
+            }
         }
         
         this.players.forEach(player => {
@@ -186,12 +205,35 @@ wsServer.on('request', (request) => {
     connection.on('close', () => {
         console.log("Conexión cerrada");
         
+        // Buscar el jugador que se desconecta
+        let game = findGameByConnection(connection);
+        if(game){
+            const disconnectedPlayer = game.getPlayers().find(player => player.playerId === connection.playerId);
+            
+            // Si se encontró al jugador desconectado
+            if (disconnectedPlayer) {
+                // Iniciar un intervalo para mover gradualmente al jugador hacia abajo
+                const descentInterval = setInterval(() => {
+                    // Mover al jugador hacia abajo
+                    disconnectedPlayer.setY(disconnectedPlayer.getY() + 10); // Ajusta la velocidad de descenso según tus necesidades
+                    
+                    // Enviar la información actualizada del juego a todos los jugadores
+                    game.sendGameInfo();
+                    
+                    // Si el jugador ha alcanzado la parte inferior del canvas, detener el intervalo
+                    if (disconnectedPlayer.getY() >= canvasHeight) {
+                        clearInterval(descentInterval);
+                    }
+                }, 50); // Ajusta el intervalo según la velocidad deseada de descenso
+            }
+        }
         // Buscar y eliminar la partida en la que se encuentra el jugador que se desconecta
         const index = connections.indexOf(connection);
         if (index !== -1) {
             connections.splice(index, 1);
         }
     });
+    
     
     connection.on('message', (message) => {
         const data = JSON.parse(message.utf8Data);
@@ -242,10 +284,11 @@ wsServer.on('request', (request) => {
                 // Envía un mensaje a todos los jugadores del juego indicando que la carrera ha comenzado
                 if (!game.isRunning()) {
                     game.start();
-                    const startMessage = { type: 'race_start' , game_id: data.game_id};
+                    const startMessage = { type: 'race_start' , game_id: data.game_id, color:'red'};
                     game.players.forEach(player => {
                         const playerConnection = connections.find(conn => conn.playerId === player.playerId);
                         if (playerConnection) {
+                            startMessage.color = player.playerColor;
                             playerConnection.sendUTF(JSON.stringify(startMessage));
                         }
                     });
@@ -278,6 +321,22 @@ function findGameById(gameId) {
     return null;
 }
 
+function findGameByConnection(connection) {
+    // Iterar sobre la lista de juegos
+    for (let i = 0; i < games.length; i++) {
+        // Verificar si la conexión del jugador está asociada con alguno de los juegos
+        const gamePlayers = games[i].getPlayers();
+        for (let j = 0; j < gamePlayers.length; j++) {
+            // Verificar si la conexión del jugador coincide con algún jugador en el juego actual
+            if (gamePlayers[j].playerId === connection.playerId) {
+                // Si hay coincidencia, devolver el juego encontrado
+                return games[i];
+            }
+        }
+    }
+    // Si no se encuentra ningún juego asociado con la conexión del jugador, devolver null
+    return null;
+}
 function assignColor(numPlayers) {
     switch (numPlayers) {
         case 2:
@@ -360,24 +419,25 @@ function checkCollision(game,player, direction) {
     }
     
     // Verificar la colisión del jugador con otros jugadores en el juego
-        const otherPlayers = game.getPlayers().filter(otherPlayer => otherPlayer.playerId !== player.playerId);
-        for (let j = 0; j < otherPlayers.length; j++) {
-            const otherPlayer = otherPlayers[j];
-            if (
-                futureX < otherPlayer.getX() + otherPlayer.width &&
-                futureX + player.width > otherPlayer.getX() &&
-                futureY < otherPlayer.getY() + otherPlayer.height &&
-                futureY + player.height > otherPlayer.getY()
-                ) {
-                    // Hay colisión con otro jugador
-                    return true;
-                }
+    const otherPlayers = game.getPlayers().filter(otherPlayer => otherPlayer.playerId !== player.playerId);
+    for (let j = 0; j < otherPlayers.length; j++) {
+        const otherPlayer = otherPlayers[j];
+        if (
+            futureX < otherPlayer.getX() + otherPlayer.width &&
+            futureX + player.width > otherPlayer.getX() &&
+            futureY < otherPlayer.getY() + otherPlayer.height &&
+            futureY + player.height > otherPlayer.getY()
+            ) {
+                // Hay colisión con otro jugador
+                return true;
             }
+        }
         
         // Verificar la colisión del jugador con los obstáculos en el juego
-            const obstacles = game.getObstacles();
-            for (let j = 0; j < obstacles.length; j++) {
-                const obstacle = obstacles[j];
+        const obstacles = game.getObstacles();
+        for (let j = 0; j < obstacles.length; j++) {
+            const obstacle = obstacles[j];
+                
                 if (
                     futureX < obstacle.x + obstacle.width &&
                     futureX + player.width > obstacle.x &&
@@ -387,7 +447,8 @@ function checkCollision(game,player, direction) {
                         // Hay colisión con un obstáculo
                         return true;
                     }
-                }
+          
+        }
             
             // No hay colisión con otros jugadores ni con obstáculos
             return false;
