@@ -78,16 +78,8 @@ class Game {
         this.running = false;
         this.interval = null; // Intervalo para enviar la información del juego a los jugadores
         this.roadCount = 1;
-        this.roadInterval = setInterval(() => {
-            if(this.roadCount == 1 ){
-                this.roadCount = 2;
-            }else{
-                this.roadCount = 1;
-            }
-        }, 60);
-        this.obstacleInterval = setInterval(() => {
-            this.addRandomObstacle();
-        }, 5000); // Agrega un obstáculo cada 5 segundos
+        this.roadInterval = null;
+        this.obstacleInterval = null;
     }
     
     addPlayer(player) {
@@ -159,6 +151,16 @@ class Game {
         this.interval = setInterval(() => {
             this.sendGameInfo();
         }, 16); // Intervalo de 16 milisegundos (aproximadamente 60 FPS)
+        this.roadInterval = setInterval(() => {
+            if(this.roadCount == 1 ){
+                this.roadCount = 2;
+            }else{
+                this.roadCount = 1;
+            }
+        }, 60);
+        this.obstacleInterval = setInterval(() => {
+            this.addRandomObstacle();
+        }, 5000); // Agrega un obstáculo cada 5 segundos
     }
     
     finish() {

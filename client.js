@@ -1,4 +1,5 @@
-const socket = new WebSocket('ws://localhost:8080');
+// const socket = new WebSocket('ws://localhost:8080');
+const socket = new WebSocket('ws://192.168.1.70:8080');
 const createRaceButton = document.getElementById('createRace');
 const searchRaceButton = document.getElementById('searchRace');
 const gameIdElement = document.getElementById('game_id');
