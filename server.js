@@ -11,6 +11,8 @@ class Player {
         this.width = 30;
         this.height = 50;
         this.speed =2;
+        this.points = 0;
+        this.position = 0;
         this.gameId = null;
     }
     
@@ -80,8 +82,17 @@ class Game {
         this.roadCount = 1;
         this.roadInterval = null;
         this.obstacleInterval = null;
+        this.phaseInterval = null;
+        this.phase = 1;
+        this.velocity = 1;
+        }
+    sortPlayersByPosition() {
+        this.players.sort((a, b) => a.getY() - b.getY());
+        // Actualizar la posición de cada jugador después de ordenar
+        this.players.forEach((player, index) => {
+            player.position = index + 1;
+        });
     }
-    
     addPlayer(player) {
         player.setGameId(this.uuid)
         this.players.push(player);
@@ -161,6 +172,9 @@ class Game {
         this.obstacleInterval = setInterval(() => {
             this.addRandomObstacle();
         }, 5000); // Agrega un obstáculo cada 5 segundos
+        this.phaseInterval = setInterval(() => {
+            this.phase++;
+        }, 15000); // Agrega un obstáculo cada 5 segundos
     }
     
     finish() {
@@ -175,11 +189,13 @@ class Game {
     
     // Función para enviar la información del juego a todos los jugadores
     sendGameInfo() {
+        this.sortPlayersByPosition();
         const gameData = {
             type: 'game_info',
             players: this.getPlayers(), // Obtener la información de los jugadores del juego
             obstacles: this.getObstacles(), // Obtener la información de los jugadores del juego
-            roadCount: this.roadCount
+            roadCount: this.roadCount,
+            phase: this.phase
             // Puedes agregar más información del juego si es necesario
         };
         for (let i = 0; i < this.obstacles.length; i++) {
@@ -190,8 +206,16 @@ class Game {
                 this.destroyObstacle(obstacle)
             }
         }
-        
         this.players.forEach(player => {
+            if(player.position == 1){
+                player.points+=this.phase*this.velocity*10;
+            }else  if(player.position == 2){
+                player.points+=this.velocity*10;
+            }else  if(player.position == 3){
+                player.points+=this.velocity*7;
+            }else  if(player.position == 4){
+                player.points+=this.velocity*5;
+            }
             checkCollision(this,player)
             const playerConnection = connections.find(conn => conn.playerId === player.playerId);
             if (playerConnection) {
