@@ -41,15 +41,21 @@ class Player {
     }
 }
 
+class Road {
+    constructor(y) {
+        this.y = y;
+    }
+}
+
 class Obstacle {
-    constructor(x,color) {
+    constructor(x,color,speed) {
         
         this.color = color;
         this.x = x;
         this.y = -20;
         this.width = 30;
         this.height = 50;
-        this.speed = 2;
+        this.speed = speed;
     }
     
     getX() {
@@ -84,7 +90,8 @@ class Game {
         this.obstacleInterval = null;
         this.phaseInterval = null;
         this.phase = 1;
-        this.velocity = 1;
+        this.roads = []
+        this.velocity = 15;
         }
     sortPlayersByPosition() {
         this.players.sort((a, b) => a.getY() - b.getY());
@@ -120,7 +127,7 @@ class Game {
         const x = Math.floor(Math.random() * canvasWidth);
         
         // Agregar el obstáculo al array de obstáculos
-        const obstacle = new Obstacle(x, "black");
+        const obstacle = new Obstacle(x, "black",this.velocity-10);
         this.obstacles.push(obstacle);
     }
     destroyObstacle(obstacle) {
@@ -150,7 +157,12 @@ class Game {
         
         // Calcular la posición inicial para el primer jugador
         let initialX = spaceBetweenPlayers + playerWidth / 2;
-        
+        let road_1 = new Road(0);
+        let road_2 = new Road( - canvasHeight);
+        let road_3 = new Road( - 2*canvasHeight);
+        this.roads.push(road_1);
+        this.roads.push(road_2);
+        this.roads.push(road_3);
         // Asignar las posiciones a cada jugador
         this.getPlayers().forEach((player, index) => {
             let playerX = initialX + index * (playerWidth + spaceBetweenPlayers);
@@ -162,19 +174,41 @@ class Game {
         this.interval = setInterval(() => {
             this.sendGameInfo();
         }, 16); // Intervalo de 16 milisegundos (aproximadamente 60 FPS)
-        this.roadInterval = setInterval(() => {
-            if(this.roadCount == 1 ){
-                this.roadCount = 2;
-            }else{
-                this.roadCount = 1;
-            }
-        }, 60);
+        // this.roadInterval = setInterval(() => {
+        //     // if(this.roadCount == 1 ){
+        //     //     this.roadCount = 2;
+        //     // }else{
+        //     //     this.roadCount = 1;
+        //     // }
+
+        // }, 60);
+        this.moveRoads();
+
         this.obstacleInterval = setInterval(() => {
             this.addRandomObstacle();
         }, 5000); // Agrega un obstáculo cada 5 segundos
         this.phaseInterval = setInterval(() => {
             this.phase++;
+            this.velocity++;
         }, 15000); // Agrega un obstáculo cada 5 segundos
+    }
+    moveRoads() {
+        this.roadInterval = setInterval(()=>{
+            this.roads.forEach(road => {
+                // Mover la carretera hacia abajo
+                road.y += 1;
+                console.log(road)
+                // Si la posición y de la carretera es mayor que la altura del lienzo,
+                // mover la carretera al final del array de carreteras
+                if (road.y > canvasHeight) {
+                    // Eliminar la carretera del principio del array y agregarla al final
+                    const shiftedRoad = this.roads.shift();
+                    shiftedRoad.y = this.roads[this.roads.length - 1].y - canvasHeight;
+                    this.roads.push(shiftedRoad);
+                }
+            },100/this.velocity);
+        },)
+        
     }
     
     finish() {
@@ -189,15 +223,18 @@ class Game {
     
     // Función para enviar la información del juego a todos los jugadores
     sendGameInfo() {
+
         this.sortPlayersByPosition();
         const gameData = {
             type: 'game_info',
             players: this.getPlayers(), // Obtener la información de los jugadores del juego
             obstacles: this.getObstacles(), // Obtener la información de los jugadores del juego
             roadCount: this.roadCount,
-            phase: this.phase
+            phase: this.phase,
+            roads: this.roads
             // Puedes agregar más información del juego si es necesario
         };
+
         for (let i = 0; i < this.obstacles.length; i++) {
             const obstacle = this.obstacles[i];
             if(obstacle.getY() < canvasHeight){
@@ -206,6 +243,7 @@ class Game {
                 this.destroyObstacle(obstacle)
             }
         }
+
         this.players.forEach(player => {
             if(player.position == 1){
                 player.points+=this.phase*this.velocity*10;

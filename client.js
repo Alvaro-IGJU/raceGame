@@ -110,12 +110,15 @@ socket.onmessage = function (evt) {
     } else if (data.type == "game_info") {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.imageSmoothingEnabled = false;
-        if (data.roadCount == 1) {
-            ctx.drawImage(road2Img, 0, 0, canvas.width, canvas.height);
-        } else {
-            ctx.drawImage(road1Img, 0, 0, canvas.width, canvas.height);
+        data.roads.forEach(road =>{
+            ctx.drawImage(road1Img, 0, road.y, canvas.width, canvas.height);
+        })
+        // if (data.roadCount == 1) {
+           
+        // } else {
+        //     ctx.drawImage(road1Img, 0, 0, canvas.width, canvas.height);
 
-        }
+        // }
 
         // Dibujar los obstáculos primero
         data.obstacles.forEach(obstacle => {
@@ -127,7 +130,7 @@ socket.onmessage = function (evt) {
         });
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
         ctx.font = '5px Arial';
-        ctx.fillRect(0, canvas.height - 7, canvas.width, 7);
+        ctx.fillRect(0, canvas.height - 12, canvas.width, 12);
         // Luego, dibujar los jugadores
         data.players.forEach(player => {
             let x;
