@@ -12,21 +12,21 @@ class Player {
         this.height = 50;
         this.speed =2;
     }
-
+    
     getX() {
         return this.x;
     }
     setX(x) {
         this.x = x;
     }
-
+    
     getY() {
         return this.y;
     }
     setY(y) {
         this.y = y;
     }
-
+    
     draw(ctx) {
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -35,7 +35,7 @@ class Player {
 
 class Obstacle {
     constructor(x,color) {
-      
+        
         this.color = color;
         this.x = x;
         this.y = -20;
@@ -43,14 +43,14 @@ class Obstacle {
         this.height = 30;
         this.speed = 1;
     }
-
+    
     getX() {
         return this.x;
     }
     setX(x) {
         this.x = x;
     }
-
+    
     getY() {
         return this.y;
     }
@@ -75,14 +75,14 @@ class Game {
             this.addRandomObstacle();
         }, 5000); // Agrega un obstáculo cada 5 segundos
     }
-
+    
     addPlayer(player) {
         this.players.push(player);
     }
     addRandomObstacle() {
         // Generar una posición aleatoria para el obstáculo
         const x = Math.floor(Math.random() * canvasWidth);
-
+        
         // Agregar el obstáculo al array de obstáculos
         const obstacle = new Obstacle(x, "black");
         this.obstacles.push(obstacle);
@@ -90,46 +90,46 @@ class Game {
     getObstacles() {
         return this.obstacles;
     }
-
+    
     getPlayers() {
         return this.players;
     }
-
+    
     getPlayerCount() {
         return this.players.length;
     }
-
+    
     start() {
         let playerWidth = 30; // Ancho de cada jugador (ajústalo según tus necesidades)
         let playerCount = this.getPlayers().length;
         let spaceBetweenPlayers = (canvasWidth - playerWidth * playerCount) / (playerCount + 1); // Espacio entre cada jugador
-    
+        
         // Calcular la posición inicial para el primer jugador
         let initialX = spaceBetweenPlayers + playerWidth / 2;
-    
+        
         // Asignar las posiciones a cada jugador
         this.getPlayers().forEach((player, index) => {
             let playerX = initialX + index * (playerWidth + spaceBetweenPlayers);
             player.setX(playerX);
         });
-    
+        
         // Iniciar el intervalo para enviar la información del juego a los jugadores
         this.running = true;
         this.interval = setInterval(() => {
             this.sendGameInfo();
         }, 16); // Intervalo de 16 milisegundos (aproximadamente 60 FPS)
     }
-
+    
     finish() {
         this.running = false;
         // Detener el intervalo cuando finaliza la carrera
         clearInterval(this.interval);
     }
-
+    
     isRunning() {
         return this.running;
     }
-
+    
     // Función para enviar la información del juego a todos los jugadores
     sendGameInfo() {
         const gameData = {
@@ -138,12 +138,12 @@ class Game {
             obstacles: this.getObstacles() // Obtener la información de los jugadores del juego
             // Puedes agregar más información del juego si es necesario
         };
-
+        
         for (let i = 0; i < this.obstacles.length; i++) {
             const obstacle = this.obstacles[i];
             obstacle.move();
         }
-
+        
         this.players.forEach(player => {
             const playerConnection = connections.find(conn => conn.playerId === player.playerId);
             if (playerConnection) {
@@ -174,25 +174,25 @@ const games = [];
 wsServer.on('request', (request) => {
     console.log("Nueva conexión WebSocket aceptada");
     const connectionId = uuidv4();
-
+    
     const connection = request.accept(null, request.origin);
     connection.playerId = connectionId;
     connections.push(connection);
-
+    
     connections.forEach(conn => {
         conn.sendUTF(JSON.stringify({ type: 'hola', message: "HOLA" }));
     });
-
+    
     connection.on('close', () => {
         console.log("Conexión cerrada");
-
+        
         // Buscar y eliminar la partida en la que se encuentra el jugador que se desconecta
         const index = connections.indexOf(connection);
         if (index !== -1) {
             connections.splice(index, 1);
         }
     });
-
+    
     connection.on('message', (message) => {
         const data = JSON.parse(message.utf8Data);
         if (data.type === 'createRace') {
@@ -203,16 +203,16 @@ wsServer.on('request', (request) => {
             let playerColor = assignColor(1);
             let newPlayer = new Player(connection.playerId, playerName, playerColor);
             game.addPlayer(newPlayer);
-
+            
             // Enviar datos de juego al cliente
             connection.sendUTF(JSON.stringify({ type: 'game_id', game_id: gameId, players: game.getPlayers() }));
-
+            
             // Guardar el objeto de juego en la lista de juegos
             games.push(game);
         } else if (data.type === 'searchRace') {
             let gameId = data.race_id;
             let race = findGameById(gameId);
-
+            
             if (race) {
                 let numPlayers = race.getPlayerCount() + 1;
                 if (numPlayers <= 4) {
@@ -220,13 +220,13 @@ wsServer.on('request', (request) => {
                     let playerColor = assignColor(numPlayers);
                     let newPlayer = new Player(connection.playerId, playerName, playerColor);
                     race.addPlayer(newPlayer);
-
+                    
                     // Enviar un mensaje a todos los jugadores del juego con la lista actualizada de jugadores
                     const updatedPlayers = race.getPlayers();
                     connections.forEach(conn => {
                         conn.sendUTF(JSON.stringify({ type: 'player_join', players: updatedPlayers }));
                     });
-
+                    
                     // Confirmar al jugador que se ha unido al juego exitosamente
                     connection.sendUTF(JSON.stringify({ type: 'game_join', game_id: gameId, players: updatedPlayers }));
                 } else {
@@ -237,7 +237,7 @@ wsServer.on('request', (request) => {
             }
         } else if (data.type === 'startRace') {
             let game = findGameById(data.game_id);
-
+            
             if (game) {
                 // Envía un mensaje a todos los jugadores del juego indicando que la carrera ha comenzado
                 if (!game.isRunning()) {
@@ -254,7 +254,7 @@ wsServer.on('request', (request) => {
         } else if (data.type === 'game_action') {
             let game = findGameById(data.game_id);
             let player = game.getPlayers().find(player => player.playerId === connection.playerId);
-
+            
             if (game && player) {
                 // Envía un mensaje a todos los jugadores del juego indicando que la carrera ha comenzado
                 if (game.isRunning()) {
@@ -281,87 +281,86 @@ function findGameById(gameId) {
 function assignColor(numPlayers) {
     switch (numPlayers) {
         case 2:
-            return "blue";
+        return "blue";
         case 3:
-            return "green";
+        return "green";
         case 4:
-            return "yellow";
+        return "yellow";
         default:
-            return "red";
+        return "red";
     }
 }
 
 function handleGameAction(game, player, keysPressed) {
     // Aquí implementa la lógica para manejar las acciones del juego según las teclas presionadas
     if (keysPressed['w'] || keysPressed['ArrowUp']) {
-        movePlayer(player, 'up');
+        movePlayer(game,player, 'up');
     }
     if (keysPressed['a'] || keysPressed['ArrowLeft']) {
-        movePlayer(player, 'left');
+        movePlayer(game,player, 'left');
     }
     if (keysPressed['s'] || keysPressed['ArrowDown']) {
-        movePlayer(player, 'down');
+        movePlayer(game,player, 'down');
     }
     if (keysPressed['d'] || keysPressed['ArrowRight']) {
-        movePlayer(player, 'right');
+        movePlayer(game,player, 'right');
     }
     
     // Envía la información actualizada del juego a todos los jugadores
     game.sendGameInfo();
 }
 
-function movePlayer(player, direction) {
+function movePlayer(game,player, direction) {
     // Verificar la dirección y ajustar la posición del jugador en consecuencia
     switch (direction) {
         case 'up':
-            if (player.getY() - player.speed >= 0 && !checkCollision(player, 'up')) {
-                player.setY(player.getY() - player.speed);
-            }
-            break;
+        if (player.getY() - player.speed >= 0 && !checkCollision(game,player, 'up')) {
+            player.setY(player.getY() - player.speed);
+        }
+        break;
         case 'down':
-            if (player.getY() + player.speed <= canvasHeight - player.height && !checkCollision(player, 'down')) {
-                player.setY(player.getY() + player.speed);
-            }
-            break;
+        if (player.getY() + player.speed <= canvasHeight - player.height && !checkCollision(game,player, 'down')) {
+            player.setY(player.getY() + player.speed);
+        }
+        break;
         case 'left':
-            if (player.getX() - player.speed >= 0 && !checkCollision(player, 'left')) {
-                player.setX(player.getX() - player.speed);
-            }
-            break;
+        if (player.getX() - player.speed >= 0 && !checkCollision(game,player, 'left')) {
+            player.setX(player.getX() - player.speed);
+        }
+        break;
         case 'right':
-            if (player.getX() + player.speed <= canvasWidth && !checkCollision(player, 'right')) {
-                player.setX(player.getX() + player.speed);
-            }
-            break;
+        if (player.getX() + player.speed <= canvasWidth && !checkCollision(game,player, 'right')) {
+            player.setX(player.getX() + player.speed);
+        }
+        break;
         default:
-            break;
+        break;
     }
 }
 
-function checkCollision(player, direction) {
+function checkCollision(game,player, direction) {
     // Calcular la posición futura del jugador según la dirección y la velocidad
     let futureX = player.getX();
     let futureY = player.getY();
     switch (direction) {
         case 'up':
-            futureY -= player.speed;
-            break;
+        futureY -= player.speed;
+        break;
         case 'down':
-            futureY += player.speed;
-            break;
+        futureY += player.speed;
+        break;
         case 'left':
-            futureX -= player.speed;
-            break;
+        futureX -= player.speed;
+        break;
         case 'right':
-            futureX += player.speed;
-            break;
+        futureX += player.speed;
+        break;
         default:
-            break;
+        break;
     }
-
+    
     // Verificar la colisión del jugador con otros jugadores en el juego
-    for (let i = 0; i < games.length; i++) {
-        const otherPlayers = games[i].getPlayers().filter(otherPlayer => otherPlayer.playerId !== player.playerId);
+        const otherPlayers = game.getPlayers().filter(otherPlayer => otherPlayer.playerId !== player.playerId);
         for (let j = 0; j < otherPlayers.length; j++) {
             const otherPlayer = otherPlayers[j];
             if (
@@ -369,31 +368,29 @@ function checkCollision(player, direction) {
                 futureX + player.width > otherPlayer.getX() &&
                 futureY < otherPlayer.getY() + otherPlayer.height &&
                 futureY + player.height > otherPlayer.getY()
-            ) {
-                // Hay colisión con otro jugador
-                return true;
+                ) {
+                    // Hay colisión con otro jugador
+                    return true;
+                }
             }
+        
+        // Verificar la colisión del jugador con los obstáculos en el juego
+            const obstacles = game.getObstacles();
+            for (let j = 0; j < obstacles.length; j++) {
+                const obstacle = obstacles[j];
+                if (
+                    futureX < obstacle.x + obstacle.width &&
+                    futureX + player.width > obstacle.x &&
+                    futureY < obstacle.y + obstacle.height &&
+                    futureY + player.height > obstacle.y
+                    ) {
+                        // Hay colisión con un obstáculo
+                        return true;
+                    }
+                }
+            
+            // No hay colisión con otros jugadores ni con obstáculos
+            return false;
         }
-    }
-
-    // Verificar la colisión del jugador con los obstáculos en el juego
-    for (let i = 0; i < games.length; i++) {
-        const obstacles = games[i].getObstacles();
-        for (let j = 0; j < obstacles.length; j++) {
-            const obstacle = obstacles[j];
-            if (
-                futureX < obstacle.x + obstacle.width &&
-                futureX + player.width > obstacle.x &&
-                futureY < obstacle.y + obstacle.height &&
-                futureY + player.height > obstacle.y
-            ) {
-                // Hay colisión con un obstáculo
-                return true;
-            }
-        }
-    }
-
-    // No hay colisión con otros jugadores ni con obstáculos
-    return false;
-}
-
+        
+        
