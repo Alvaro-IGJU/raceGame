@@ -47,7 +47,7 @@ class Obstacle {
         this.y = -20;
         this.width = 30;
         this.height = 50;
-        this.speed = 10;
+        this.speed = 2;
     }
     
     getX() {
@@ -463,6 +463,9 @@ function checkCollision(game, player, direction = null) {
             futureY < otherPlayer.getY() + otherPlayer.height &&
             futureY + player.height > otherPlayer.getY()
         ) {
+            if (player.getY() < otherPlayer.getY() + otherPlayer.height) {
+                player.setY(player.getY() + otherPlayer.speed);
+            }
             // Hay colisión con otro jugador
             return true;
         }
