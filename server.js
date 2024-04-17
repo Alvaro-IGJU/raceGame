@@ -192,6 +192,7 @@ class Game {
         }
         
         this.players.forEach(player => {
+            checkCollision(this,player)
             const playerConnection = connections.find(conn => conn.playerId === player.playerId);
             if (playerConnection) {
                 playerConnection.sendUTF(JSON.stringify(gameData)); // Enviar la información del juego al jugador
@@ -431,27 +432,27 @@ function movePlayer(game,player, direction) {
     }
 }
 
-function checkCollision(game,player, direction) {
+function checkCollision(game, player, direction = null) {
     // Calcular la posición futura del jugador según la dirección y la velocidad
     let futureX = player.getX();
     let futureY = player.getY();
     switch (direction) {
         case 'up':
-        futureY -= player.speed;
-        break;
+            futureY -= player.speed;
+            break;
         case 'down':
-        futureY += player.speed;
-        break;
+            futureY += player.speed;
+            break;
         case 'left':
-        futureX -= player.speed;
-        break;
+            futureX -= player.speed;
+            break;
         case 'right':
-        futureX += player.speed;
-        break;
+            futureX += player.speed;
+            break;
         default:
-        break;
+            break;
     }
-    
+
     // Verificar la colisión del jugador con otros jugadores en el juego
     const otherPlayers = game.getPlayers().filter(otherPlayer => otherPlayer.playerId !== player.playerId);
     for (let j = 0; j < otherPlayers.length; j++) {
@@ -461,31 +462,34 @@ function checkCollision(game,player, direction) {
             futureX + player.width > otherPlayer.getX() &&
             futureY < otherPlayer.getY() + otherPlayer.height &&
             futureY + player.height > otherPlayer.getY()
-            ) {
-                // Hay colisión con otro jugador
-                return true;
+        ) {
+            // Hay colisión con otro jugador
+            return true;
+        }
+    }
+
+    // Verificar la colisión del jugador con los obstáculos en el juego
+    const obstacles = game.getObstacles();
+    for (let j = 0; j < obstacles.length; j++) {
+        const obstacle = obstacles[j];
+
+        if (
+            futureX < obstacle.x + obstacle.width &&
+            futureX + player.width > obstacle.x &&
+            futureY < obstacle.y + obstacle.height &&
+            futureY + player.height > obstacle.y
+        ) {
+            // Hay colisión con un obstáculo
+            // Si el jugador está colisionando por debajo del obstáculo, moverlo hacia abajo
+            if (player.getY() < obstacle.y + obstacle.height && direction == null) {
+                player.setY(player.getY() + obstacle.speed);
             }
+            return true;
         }
-        
-        // Verificar la colisión del jugador con los obstáculos en el juego
-        const obstacles = game.getObstacles();
-        for (let j = 0; j < obstacles.length; j++) {
-            const obstacle = obstacles[j];
-                
-                if (
-                    futureX < obstacle.x + obstacle.width &&
-                    futureX + player.width > obstacle.x &&
-                    futureY < obstacle.y + obstacle.height &&
-                    futureY + player.height > obstacle.y
-                    ) {
-                        // Hay colisión con un obstáculo
-                        return true;
-                    }
-          
-        }
-            
-            // No hay colisión con otros jugadores ni con obstáculos
-            return false;
-        }
-        
+    }
+
+    // No hay colisión con otros jugadores ni con obstáculos
+    return false;
+}
+
         
