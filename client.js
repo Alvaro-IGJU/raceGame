@@ -9,6 +9,12 @@ const raceCanvasContainer = document.getElementById('race-canvas-container');
 const playersList = document.getElementById('playersList');
 const errorSearchMessage = document.getElementById('errorSearch');
 var canvas;
+const buttonX = 50; // Posición X del botón
+const buttonY = 50; // Posición Y del botón
+const buttonWidth = 100; // Ancho del botón
+const buttonHeight = 50; // Alto del botón
+const buttonText = 'Reiniciar'; // Texto del botón
+
 var ctx;
 let road1Img = new Image();
 road1Img.src = 'road1.png';
@@ -25,7 +31,8 @@ let greenCarImg = new Image();
 greenCarImg.src = 'green.png';
 let yellowCarImg = new Image();
 yellowCarImg.src = 'yellow.png';
-
+let finished = false;
+let final_message = false;
 const keysPressed = {
     'w': false,
     'a': false,
@@ -68,14 +75,33 @@ socket.onmessage = function (evt) {
         errorSearchMessage.innerHTML = `<span style="color:red; font-weight:bold;  ">La partida está llena</span>`
     } else if (data.type == "race_start") {
         console.log(data)
-
+        finished = false;
+        final_message = false;
         initContainer.style.display = "none";
         waitingPlayersContainer.style.display = "none";
         raceCanvasContainer.style.display = "block";
         canvas = document.getElementById('myCanvas');
+        canvas.width = 800;
+        canvas.height = 700;
         // canvas.width = window.innerWidth; canvas.height = window.innerHeight;
         ctx = canvas.getContext('2d');
-
+        
+canvas.addEventListener('click', function(event) {
+    // Obtener la posición del clic en relación con el canvas
+    if(finished){
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        
+        // Verificar si se hizo clic en el área del botón
+        if (mouseX >= canvas.width/3 && mouseX <= canvas.width/3 + canvas.width/3 &&
+            mouseY >= canvas.height/1.7 && mouseY <= canvas.height/1.7 + buttonHeight) {
+                // Lógica para reiniciar la partida aquí
+                console.log('Partida reiniciada');
+            }
+        }
+        
+    });
         document.addEventListener("keydown", (e) => {
             e.preventDefault();
             // Verificar si la tecla presionada es una de las teclas que deseas enviar al servidor
@@ -91,7 +117,7 @@ socket.onmessage = function (evt) {
                 socket.send(JSON.stringify(gameData));
             }
         });
-
+        
         document.addEventListener("keyup", (e) => {
             e.preventDefault();
             // Verificar si la tecla presionada es una de las teclas que deseas enviar al servidor
@@ -108,76 +134,135 @@ socket.onmessage = function (evt) {
             }
         });
     } else if (data.type == "game_info") {
+        canvas.width = 800;
+        canvas.height = 700;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.imageSmoothingEnabled = false;
         data.roads.forEach(road =>{
+            ctx.imageSmoothingEnabled = false;
             ctx.drawImage(road1Img, 0, road.y, canvas.width, canvas.height);
         })
         // if (data.roadCount == 1) {
-           
+        
         // } else {
         //     ctx.drawImage(road1Img, 0, 0, canvas.width, canvas.height);
-
+        
         // }
-
+        
         // Dibujar los obstáculos primero
         data.obstacles.forEach(obstacle => {
-
+            
             if(obstacle.y < 0){
-            ctx.fillStyle = "yellow";
-            ctx.fillRect(obstacle.x + (obstacle.width/2), 5, 5, 7);
-            ctx.fillRect(obstacle.x + (obstacle.width/2), 15, 5, 5);
+                ctx.fillStyle = "yellow";
+                ctx.fillRect(obstacle.x + (obstacle.width/2), 5, 7, 17);
+                ctx.fillRect(obstacle.x + (obstacle.width/2), 15 +17, 7, 7);
             }
             // Cuando la imagen termine de cargar, dibujarla en el canvas
             // Dibujar la imagen en el canvas ajustando su tamaño al ancho y alto del obstáculo
+            ctx.imageSmoothingEnabled = false;
+            
             ctx.drawImage(obstacleImg, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
         });
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-        ctx.font = '5px Arial';
-        ctx.fillRect(0, canvas.height - 12, canvas.width, 12);
+        ctx.font = '10px Arial';
+        ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
         // Luego, dibujar los jugadores
         data.players.forEach(player => {
             let x;
-            let y;
+            let y = canvas.height - 9;
             let color = player.playerColor;
-
+            
             if (player.playerColor == "red") {
                 playerImg = redCarImg;
                 x =  (canvas.width/4) - 45;
-                y = canvas.height - 2;
             } else if (player.playerColor == "blue") {
                 playerImg = blueCarImg;
                 x =  2*canvas.width/4 - 45;
-                y = canvas.height - 2;
             } else if (player.playerColor == "green") {
                 playerImg = greenCarImg;
                 x =  3*canvas.width/4 - 45;
-                y = canvas.height - 2;
             } else if (player.playerColor == "yellow") {
                 playerImg = yellowCarImg;
                 x =  4*canvas.width/4 - 45;
-                y = canvas.height - 2;
             }
             if (player.position == 1) {
                 ctx.fillStyle = "rgba(255, 255, 0, 0.2)";
-                ctx.fillRect(0, player.y, canvas.width, 3);
-                ctx.font = '10px Arial';
+                ctx.fillRect(0, player.y, canvas.width, 10);
+                ctx.font = '20px Arial';
                 ctx.fillStyle = 'yellow';
-                ctx.fillText('x' + data.phase, 41, player.y + 12);
-
+                ctx.fillText('x' + data.phase, 110, player.y + 28);
+                
             }
-
+            ctx.imageSmoothingEnabled = false;
+            
             ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
-           
+            
             ctx.fillStyle = player.playerColor;
             
             ctx.fillText(player.points, x, y);
-
+            
         });
-
+        
+        if (data.finished && !finished) {
+            finished = true;
+            
+            // Aplicar el filtro de escala de grises inmediatamente
+            canvas.style.filter = 'grayscale(100%)';
+            
+            const fadeOutDuration = 2000; // Duración de la desaparición gradual de la escala de grises en milisegundos
+            const framesPerSecond = 60; // Número de cuadros por segundo para la animación
+            const frameIncrement = 1 / (fadeOutDuration / 1000 * framesPerSecond); // Incremento de la escala de grises por cuadro
+            
+            // Función para desvanecer gradualmente la escala de grises
+            const fadeOutGrayscale = () => {
+                // Obtener el valor actual de la escala de grises
+                let currentGrayscale = parseFloat(canvas.style.filter.replace('grayscale(', '').replace('%)', '')) / 100;
+                
+                // Reducir gradualmente la escala de grises
+                currentGrayscale -= frameIncrement;
+                
+                // Limitar el valor de la escala de grises entre 0 y 1
+                currentGrayscale = Math.max(0, currentGrayscale);
+                
+                // Aplicar el filtro de escala de grises al canvas
+                canvas.style.filter = `grayscale(${currentGrayscale * 100}%)`;
+                
+                // Verificar si la animación ha terminado
+                if (currentGrayscale > 0) {
+                    // Si la animación no ha terminado, continuar con el siguiente cuadro
+                    requestAnimationFrame(fadeOutGrayscale);
+                } else {
+                    // Si la animación ha terminado, establecer el mensaje final
+                    final_message = true;
+                }
+            };
+            
+            // Iniciar la animación de desvanecimiento de la escala de grises
+            setTimeout(()=>{
+                requestAnimationFrame(fadeOutGrayscale);
+                
+            },2000)
+        }
+        
+        if (final_message){
+            ctx.fillStyle = "rgba(255, 255, 255, 1)";//Fondo blanco
+            ctx.fillRect(canvas.width/4, canvas.height/4, canvas.width/2, canvas.height/2);
+            ctx.fillStyle = "rgba(155, 155, 155, 1)";//Cuadrado gris
+            ctx.fillRect(canvas.width/3, canvas.height/2.8, canvas.width/3, canvas.height/5);
+            ctx.fillStyle = "rgba(255, 255, 255, 1)";//Cuadraditos pequeños
+            ctx.fillRect(canvas.width/3-1, canvas.height/2.8, 80, 60);
+            ctx.fillStyle = "rgba(255, 255, 255, 1)";//Cuadraditos pequeños
+            
+            ctx.fillRect(canvas.width/3+187, canvas.height/2.8, 80, 60);
+            
+            // Llamada a la función para dibujar el botón en el canvas
+          
+            drawButton(ctx, canvas.width/3, canvas.height/1.7, canvas.width/3, buttonHeight, buttonText);
+            // Agregar un event listener para el clic en el canvas
+            
+        }
     }
-
-
+    
+    
 }
 
 // Obtener input por ID
@@ -199,3 +284,15 @@ searchRaceButton.addEventListener('click', function () {
 searchInput.addEventListener('input', function (event) {
     console.log('Input cambiado:', event.target.value);
 });
+function drawButton(ctx, x, y, width, height, text) {
+    // Dibujar el botón como un rectángulo
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(x, y, width, height);
+    
+    // Dibujar el texto en el centro del botón
+    ctx.font = '20px Arial';
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + width / 2, y + height / 2);
+}

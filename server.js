@@ -1,5 +1,5 @@
-const canvasWidth = 270; // Ancho del canvas (ajústalo según tus necesidades)
-const canvasHeight = 150; // Altura del canvas (ajústalo según tus necesidades)
+const canvasWidth = 730; // Ancho del canvas (ajústalo según tus necesidades)
+const canvasHeight = 700; // Altura del canvas (ajústalo según tus necesidades)
 
 class Player {
     constructor(playerId, playerName, playerColor) {
@@ -8,9 +8,9 @@ class Player {
         this.playerColor = playerColor;
         this.x = 50;
         this.y = 90;
-        this.width = 26;
-        this.height = 35;
-        this.speed =2;
+        this.width = 76;
+        this.height = 125;
+        this.speed =7;
         this.points = 0;
         this.position = 0;
         this.gameId = null;
@@ -54,8 +54,8 @@ class Obstacle {
         this.color = color;
         this.x = x;
         this.y = -1000;
-        this.width = 26;
-        this.height = 35;
+        this.width = 76;
+        this.height = 125;
         this.speed = speed;
     }
     
@@ -92,7 +92,7 @@ class Game {
         this.phaseInterval = null;
         this.phase = 1;
         this.roads = []
-        this.velocity = 1;
+        this.velocity = 3;
     }
     sortPlayersByPosition() {
         this.players.sort((a, b) => a.getY() - b.getY());
@@ -128,7 +128,7 @@ class Game {
         const x = Math.floor(Math.random() * canvasWidth);
         
         // Agregar el obstáculo al array de obstáculos
-        const obstacle = new Obstacle(x, "black",this.velocity);
+        const obstacle = new Obstacle(x, "black",10 /this.velocity*2);
         this.obstacles.push(obstacle);
     }
     destroyObstacle(obstacle) {
@@ -237,7 +237,6 @@ class Game {
     
     // Función para enviar la información del juego a todos los jugadores
     sendGameInfo() {
-        this.velocity = 10;
         this.sortPlayersByPosition();
         if(this.isFinished()){
             this.velocity = 0.3;
@@ -252,14 +251,17 @@ class Game {
             obstacles: this.getObstacles(), // Obtener la información de los jugadores del juego
             roadCount: this.roadCount,
             phase: this.phase,
-            roads: this.roads
+            roads: this.roads,
+            finished: this.isFinished()
             // Puedes agregar más información del juego si es necesario
         };
         
         for (let i = 0; i < this.obstacles.length; i++) {
             const obstacle = this.obstacles[i];
             if(obstacle.getY() < canvasHeight){
+                obstacle.speed = this.velocity;
                 obstacle.move();
+                
             }else{
                 this.destroyObstacle(obstacle)
             }
