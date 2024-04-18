@@ -1,6 +1,6 @@
 const canvasWidth = 730; // Ancho del canvas (ajústalo según tus necesidades)
 const canvasHeight = 700; // Altura del canvas (ajústalo según tus necesidades)
-
+let general_player_speed = 7;
 class Player {
     constructor(playerId, playerName, playerColor) {
         this.playerId = playerId;
@@ -10,10 +10,11 @@ class Player {
         this.y = 90;
         this.width = 76;
         this.height = 125;
-        this.speed =7;
+        this.speed =general_player_speed;
         this.points = 0;
         this.position = 0;
         this.gameId = null;
+        this.isCollidingTop = false;
         this.lost = false;
     }
     
@@ -97,7 +98,6 @@ class Game {
     }
     sortPlayersByPosition() {
         this.players.sort((a, b) => a.getY() - b.getY());
-        this.players.reverse()
         // Actualizar la posición de cada jugador después de ordenar
         this.players.forEach((player, index) => {
             player.position = index + 1;
@@ -211,7 +211,7 @@ class Game {
             this.phase++;
             this.velocity++;
             this.getPlayers().forEach((player, index) => {
-                player.speed+=0.1
+                general_player_speed+=0.1
             });
         }, 15000/this.velocity); // Agrega un obstáculo cada 5 segundos
     }
@@ -287,9 +287,7 @@ class Game {
         
         this.players.forEach(player => {
             if(!player.lost){
-                console.log("PLAYER",player.speed)
-                console.log("GAME",this.velocity)
-                console.log( "LOL",this.lol)
+
                 if(player.getY() < canvasHeight){
                     if(player.position == 1){
                         player.points+=this.phase*this.velocity*10;
@@ -300,9 +298,11 @@ class Game {
                     }else  if(player.position == 4){
                         player.points+=this.velocity*5;
                     }
+                    console.log(player.playerName, player.y)
                     checkCollision(this,player)
                 }else{
                     player.lost = true;
+                    player.y = player.position * 1000
                 }
                 
                 
@@ -586,7 +586,6 @@ function checkCollision(game, player, direction = null) {
         default:
         break;
     }
-    
     // Verificar la colisión del jugador con otros jugadores en el juego
     const otherPlayers = game.getPlayers().filter(otherPlayer => otherPlayer.playerId !== player.playerId);
     for (let j = 0; j < otherPlayers.length; j++) {
@@ -597,8 +596,15 @@ function checkCollision(game, player, direction = null) {
             futureY < otherPlayer.getY() + otherPlayer.height &&
             futureY + player.height > otherPlayer.getY()
             ) {
-                if (player.getY() < otherPlayer.getY() + otherPlayer.height) {
-                    player.setY(player.getY() + otherPlayer.speed);
+                if (player.getY() < otherPlayer.getY() + otherPlayer.height ) {
+                    player.isCollidingTop = true;
+                    if(otherPlayer.isCollidingTop){
+                        if(direction == null)
+                        player.setY(player.getY() + otherPlayer.speed );
+                    }
+                }else{
+                    player.isCollidingTop = false;
+                    
                 }
                 // Hay colisión con otro jugador
                 return true;
@@ -619,7 +625,13 @@ function checkCollision(game, player, direction = null) {
                     // Hay colisión con un obstáculo
                     // Si el jugador está colisionando por debajo del obstáculo, moverlo hacia abajo
                     if (player.getY() < obstacle.y + obstacle.height && direction == null) {
+                        player.isCollidingTop = true;
+                        player.speed = obstacle.speed;
                         player.setY(player.getY() + obstacle.speed);
+                    }else{
+                        player.isCollidingTop = false;
+                        player.speed = general_player_speed;
+
                     }
                     return true;
                 }
