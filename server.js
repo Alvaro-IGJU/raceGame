@@ -1,6 +1,7 @@
 const canvasWidth = 730; // Ancho del canvas (ajústalo según tus necesidades)
 const canvasHeight = 700; // Altura del canvas (ajústalo según tus necesidades)
 let general_player_speed = 7;
+
 class Player {
     constructor(playerId, playerName, playerColor) {
         this.playerId = playerId;
@@ -87,14 +88,37 @@ class Game {
         this.obstacles = [];
         this.running = false;
         this.interval = null; // Intervalo para enviar la información del juego a los jugadores
-        this.roadCount = 1;
         this.roadInterval = null;
         this.obstacleInterval = null;
         this.phaseInterval = null;
         this.phase = 1;
         this.roads = []
         this.velocity = 3;
-        this.lol = 0;
+    }
+    clearIntervals() {
+        if (this.interval !== null) {
+
+            clearInterval(this.interval);
+            this.interval = null;
+
+        }
+        if (this.roadInterval !== null) {
+
+            clearInterval(this.roadInterval);
+            this.roadInterval = null;
+
+        }
+        if (this.obstacleInterval !== null) {
+ 
+            clearInterval(this.obstacleInterval);
+            this.obstacleInterval = null;
+        }
+        if (this.phaseInterval !== null) {
+
+            clearInterval(this.phaseInterval);
+            this.phaseInterval = null;
+
+        }
     }
     sortPlayersByPosition() {
         this.players.sort((a, b) => a.getY() - b.getY());
@@ -115,11 +139,10 @@ class Game {
             // Verificar si no quedan más jugadores en el juego
             if (this.players.length === 0) {
                 // Buscar el índice del juego en el array de juegos
-                clearInterval(this.roadInterval);
-                clearInterval(this.obstacles);
+             
                 const gameIndex = games.indexOf(this);
                 if (gameIndex !== -1) {
-                    // Eliminar el juego del array de juegos
+                    games[gameIndex].clearIntervals()                    // Eliminar el juego del array de juegos
                     games.splice(gameIndex, 1);
                 }
             }
@@ -130,7 +153,8 @@ class Game {
         const x = Math.floor(Math.random() * canvasWidth);
         
         // Agregar el obstáculo al array de obstáculos
-        const obstacle = new Obstacle(x, "black",10 /this.velocity*2);
+        // const obstacle = new Obstacle(x, "black",10 /this.velocity*2);
+        const obstacle = new Obstacle(x, "black",this.velocity*1.5);
         this.obstacles.push(obstacle);
     }
     destroyObstacle(obstacle) {
@@ -154,29 +178,14 @@ class Game {
     }
     
     start() {
-        if(this.roadInterval !== null){
-            clearInterval(this.roadInterval);
-            this.roadInterval = null;
-        }
-        if(this.obstacleInterval !== null){
-            clearInterval(this.obstacleInterval);
-            this.obstacleInterval = null;
-        }
-        if(this.phaseInterval !== null){
-            clearInterval(this.phaseInterval);
-            this.phaseInterval = null;
-        }
-        if(this.interval !== null){
-            clearInterval(this.interval);
-            this.interval = null;
-        }
+       
+        general_player_speed = 7;
         this.phase = 1;
         this.velocity = 3;
         this.obstacles = [];
         let playerWidth = 30; // Ancho de cada jugador (ajústalo según tus necesidades)
         let playerCount = this.getPlayers().length;
         let spaceBetweenPlayers = (canvasWidth - playerWidth * playerCount) / (playerCount + 1); // Espacio entre cada jugador
-        this.lol++;
         // Calcular la posición inicial para el primer jugador
         let initialX = spaceBetweenPlayers + playerWidth / 2;
         let initialY = 400;
@@ -194,7 +203,7 @@ class Game {
             player.lost = false;
             player.points = 0;
             player.position = 0;
-            player.speed =7;
+            player.speed =general_player_speed;
         });
         
         // Iniciar el intervalo para enviar la información del juego a los jugadores
@@ -202,11 +211,13 @@ class Game {
         this.interval = setInterval(() => {
             this.sendGameInfo();
         }, 16); 
+
         this.moveRoads();
         
         this.obstacleInterval = setInterval(() => {
             this.addRandomObstacle();
         }, 5000); // Agrega un obstáculo cada 5 segundos
+
         this.phaseInterval = setInterval(() => {
             this.phase++;
             this.velocity++;
@@ -214,6 +225,7 @@ class Game {
                 general_player_speed+=0.1
             });
         }, 15000/this.velocity); // Agrega un obstáculo cada 5 segundos
+
     }
     moveRoads() {
         this.roadInterval = setInterval(()=>{
@@ -230,7 +242,6 @@ class Game {
                 }
             });
         }, 10 /this.velocity*2)
-        
     }
     isFinished(){
         let allfinished = true;
@@ -246,7 +257,7 @@ class Game {
     finish() {
         this.running = false;
         // Detener el intervalo cuando finaliza la carrera
-        clearInterval(this.interval);
+     
     }
     
     isRunning() {
@@ -255,8 +266,11 @@ class Game {
     
     // Función para enviar la información del juego a todos los jugadores
     sendGameInfo() {
+        // console.log("general_player_speed",general_player_speed)
+        // console.log("this.velocity",this.velocity)
         this.sortPlayersByPosition();
         if(this.isFinished()){
+            this.running = false;
             this.velocity = 0.3;
             for (let i = 0; i < this.obstacles.length; i++) {
                let obstacle = this.obstacles[i];
@@ -267,7 +281,6 @@ class Game {
             type: 'game_info',
             players: this.getPlayers(), // Obtener la información de los jugadores del juego
             obstacles: this.getObstacles(), // Obtener la información de los jugadores del juego
-            roadCount: this.roadCount,
             phase: this.phase,
             roads: this.roads,
             finished: this.isFinished()
@@ -277,7 +290,8 @@ class Game {
         for (let i = 0; i < this.obstacles.length; i++) {
             const obstacle = this.obstacles[i];
             if(obstacle.getY() < canvasHeight){
-                obstacle.speed = this.velocity;
+                // obstacle.speed = this.velocity;
+
                 obstacle.move();
                 
             }else{
@@ -298,7 +312,6 @@ class Game {
                     }else  if(player.position == 4){
                         player.points+=this.velocity*5;
                     }
-                    console.log(player.playerName, player.y)
                     checkCollision(this,player)
                 }else{
                     player.lost = true;
@@ -425,12 +438,17 @@ wsServer.on('request', (request) => {
             } else {
                 connection.sendUTF(JSON.stringify({ type: 'game_404' }));
             }
-        } else if (data.type === 'startRace' ) {
+        } else if (data.type === 'startRace' || data.type === 'game_restart' ) {
             let game = findGameById(data.game_id);
             
             if (game) {
                 // Envía un mensaje a todos los jugadores del juego indicando que la carrera ha comenzado
                 if (!game.isRunning()) {
+
+
+                       game.clearIntervals()
+                    
+                   
                     game.start();
                     const startMessage = { type: 'race_start' , game_id: data.game_id, color:'red'};
                     game.players.forEach(player => {
@@ -443,24 +461,7 @@ wsServer.on('request', (request) => {
                 }
             }
         }
-        else if (data.type === 'game_restart' ) {
-            let game = findGameById(data.game_id);
-            game.running = false;
-            if (game) {
-                // Envía un mensaje a todos los jugadores del juego indicando que la carrera ha comenzado
-                if (!game.isRunning()) {
-                    game.start();
-                    const startMessage = { type: 'race_start' , game_id: data.game_id, color:'red'};
-                    game.players.forEach(player => {
-                        const playerConnection = connections.find(conn => conn.playerId === player.playerId);
-                        if (playerConnection) {
-                            startMessage.color = player.playerColor;
-                            playerConnection.sendUTF(JSON.stringify(startMessage));
-                        }
-                    });
-                }
-            }
-        }
+       
             
         else if (data.type === 'game_action') {
             let game = findGameById(data.game_id);
@@ -535,7 +536,6 @@ function handleGameAction(game, player, keysPressed) {
         }
     }
     // Envía la información actualizada del juego a todos los jugadores
-    game.sendGameInfo();
 }
 
 function movePlayer(game,player, direction) {
