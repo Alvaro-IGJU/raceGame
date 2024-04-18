@@ -18,18 +18,18 @@ const buttonText = 'Reiniciar'; // Texto del botón
 var ctx;
 let road1Img = new Image();
 road1Img.src = 'road1.png';
-let road2Img = new Image();
+const road2Img = new Image();
 road2Img.src = 'road2.png';
-let obstacleImg = new Image();
+const obstacleImg = new Image();
 // Asignar la ruta de la imagen
 obstacleImg.src = 'obstacle.png'; // Reemplaza 'obstacle.png' por la ruta de tu imagen
-let redCarImg = new Image();
+const redCarImg = new Image();
 redCarImg.src = 'red.png';
-let blueCarImg = new Image();
+const blueCarImg = new Image();
 blueCarImg.src = 'blue.png';
-let greenCarImg = new Image();
+const greenCarImg = new Image();
 greenCarImg.src = 'green.png';
-let yellowCarImg = new Image();
+const yellowCarImg = new Image();
 yellowCarImg.src = 'yellow.png';
 let finished = false;
 let final_message = false;
@@ -86,22 +86,25 @@ socket.onmessage = function (evt) {
         // canvas.width = window.innerWidth; canvas.height = window.innerHeight;
         ctx = canvas.getContext('2d');
         
-canvas.addEventListener('click', function(event) {
-    // Obtener la posición del clic en relación con el canvas
-    if(finished){
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = event.clientX - rect.left;
-        const mouseY = event.clientY - rect.top;
-        
-        // Verificar si se hizo clic en el área del botón
-        if (mouseX >= canvas.width/3 && mouseX <= canvas.width/3 + canvas.width/3 &&
-            mouseY >= canvas.height/1.7 && mouseY <= canvas.height/1.7 + buttonHeight) {
-                // Lógica para reiniciar la partida aquí
-                console.log('Partida reiniciada');
+        canvas.addEventListener('click', function(event) {
+            // Obtener la posición del clic en relación con el canvas
+            if(finished){
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+                
+                // Verificar si se hizo clic en el área del botón
+                if (mouseX >= canvas.width/3 && mouseX <= canvas.width/3 + canvas.width/3 &&
+                mouseY >= canvas.height/1.7 && mouseY <= canvas.height/1.7 + buttonHeight) {
+                    // Lógica para reiniciar la partida aquí
+                    finished = false;
+                    final_message = false;
+                    const restartData = { type: 'game_restart', game_id: data.game_id };
+                    socket.send(JSON.stringify(restartData));
+                }
             }
-        }
-        
-    });
+            
+        });
         document.addEventListener("keydown", (e) => {
             e.preventDefault();
             // Verificar si la tecla presionada es una de las teclas que deseas enviar al servidor
@@ -244,18 +247,43 @@ canvas.addEventListener('click', function(event) {
         }
         
         if (final_message){
+            
             ctx.fillStyle = "rgba(255, 255, 255, 1)";//Fondo blanco
             ctx.fillRect(canvas.width/4, canvas.height/4, canvas.width/2, canvas.height/2);
             ctx.fillStyle = "rgba(155, 155, 155, 1)";//Cuadrado gris
             ctx.fillRect(canvas.width/3, canvas.height/2.8, canvas.width/3, canvas.height/5);
             ctx.fillStyle = "rgba(255, 255, 255, 1)";//Cuadraditos pequeños
             ctx.fillRect(canvas.width/3-1, canvas.height/2.8, 80, 60);
+            ctx.font = '20px Arial';
+            ctx.fillStyle = 'black';
+            
+            ctx.fillText(1, canvas.width/3+130, canvas.height/2.4);//Number 1
+            ctx.fillText(2, canvas.width/3+35, canvas.height/2);//Number 2
+            ctx.fillText(3, canvas.width/3+220, canvas.height/2);//Number 3
             ctx.fillStyle = "rgba(255, 255, 255, 1)";//Cuadraditos pequeños
             
             ctx.fillRect(canvas.width/3+187, canvas.height/2.8, 80, 60);
-            
+            ctx.font = '20px Arial';
+            ctx.fillStyle = 'black';
             // Llamada a la función para dibujar el botón en el canvas
-          
+            const jugadorEnPosicion1 = data.players.filter(player => player.position === 1);
+            if(jugadorEnPosicion1.length > 0){
+                ctx.fillStyle = jugadorEnPosicion1[0].playerColor;
+                ctx.fillText(jugadorEnPosicion1[0].playerName, canvas.width/3+90, canvas.height/3);//Number 1
+                
+            }
+            const jugadorEnPosicion2 = data.players.filter(player => player.position === 2);
+            if(jugadorEnPosicion2.length > 0){
+                ctx.fillStyle = jugadorEnPosicion2[0].playerColor;
+                ctx.fillText(jugadorEnPosicion2[0].playerName,canvas.width/3-20, canvas.height/2.4);//Number 1
+                
+            }
+            const jugadorEnPosicion3 = data.players.filter(player => player.position === 3);
+            if(jugadorEnPosicion3.length > 0){
+                ctx.fillStyle = jugadorEnPosicion3[0].playerColor;
+                ctx.fillText(jugadorEnPosicion3[0].playerName,canvas.width/3+195, canvas.height/2.4);//Number 1
+                
+            }
             drawButton(ctx, canvas.width/3, canvas.height/1.7, canvas.width/3, buttonHeight, buttonText);
             // Agregar un event listener para el clic en el canvas
             
