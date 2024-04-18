@@ -8,12 +8,13 @@ class Player {
         this.playerColor = playerColor;
         this.x = 50;
         this.y = 90;
-        this.width = 30;
-        this.height = 50;
+        this.width = 26;
+        this.height = 35;
         this.speed =2;
         this.points = 0;
         this.position = 0;
         this.gameId = null;
+        this.lost = false;
     }
     
     getX() {
@@ -52,9 +53,9 @@ class Obstacle {
         
         this.color = color;
         this.x = x;
-        this.y = -20;
-        this.width = 30;
-        this.height = 50;
+        this.y = -1000;
+        this.width = 26;
+        this.height = 35;
         this.speed = speed;
     }
     
@@ -91,8 +92,8 @@ class Game {
         this.phaseInterval = null;
         this.phase = 1;
         this.roads = []
-        this.velocity = 15;
-        }
+        this.velocity = 1;
+    }
     sortPlayersByPosition() {
         this.players.sort((a, b) => a.getY() - b.getY());
         // Actualizar la posición de cada jugador después de ordenar
@@ -108,7 +109,7 @@ class Game {
         const index = this.players.indexOf(player);
         if (index !== -1) {
             this.players.splice(index, 1);
-
+            
             // Verificar si no quedan más jugadores en el juego
             if (this.players.length === 0) {
                 // Buscar el índice del juego en el array de juegos
@@ -127,7 +128,7 @@ class Game {
         const x = Math.floor(Math.random() * canvasWidth);
         
         // Agregar el obstáculo al array de obstáculos
-        const obstacle = new Obstacle(x, "black",this.velocity-10);
+        const obstacle = new Obstacle(x, "black",this.velocity);
         this.obstacles.push(obstacle);
     }
     destroyObstacle(obstacle) {
@@ -180,24 +181,26 @@ class Game {
         //     // }else{
         //     //     this.roadCount = 1;
         //     // }
-
+        
         // }, 60);
         this.moveRoads();
-
+        
         this.obstacleInterval = setInterval(() => {
             this.addRandomObstacle();
         }, 5000); // Agrega un obstáculo cada 5 segundos
         this.phaseInterval = setInterval(() => {
             this.phase++;
             this.velocity++;
-        }, 15000); // Agrega un obstáculo cada 5 segundos
+            this.getPlayers().forEach((player, index) => {
+                player.speed+=0.1
+            });
+        }, 15000/this.velocity); // Agrega un obstáculo cada 5 segundos
     }
     moveRoads() {
         this.roadInterval = setInterval(()=>{
             this.roads.forEach(road => {
                 // Mover la carretera hacia abajo
-                road.y += 1;
-                console.log(road)
+                road.y += this.velocity;
                 // Si la posición y de la carretera es mayor que la altura del lienzo,
                 // mover la carretera al final del array de carreteras
                 if (road.y > canvasHeight) {
@@ -206,8 +209,9 @@ class Game {
                     shiftedRoad.y = this.roads[this.roads.length - 1].y - canvasHeight;
                     this.roads.push(shiftedRoad);
                 }
-            },50/this.velocity);
-        },)
+                console.log(10 /this.velocity*2)
+            });
+        }, 10 /this.velocity*2)
         
     }
     
@@ -223,7 +227,7 @@ class Game {
     
     // Función para enviar la información del juego a todos los jugadores
     sendGameInfo() {
-
+        
         this.sortPlayersByPosition();
         const gameData = {
             type: 'game_info',
@@ -234,7 +238,7 @@ class Game {
             roads: this.roads
             // Puedes agregar más información del juego si es necesario
         };
-
+        
         for (let i = 0; i < this.obstacles.length; i++) {
             const obstacle = this.obstacles[i];
             if(obstacle.getY() < canvasHeight){
@@ -243,18 +247,26 @@ class Game {
                 this.destroyObstacle(obstacle)
             }
         }
-
+        
         this.players.forEach(player => {
-            if(player.position == 1){
-                player.points+=this.phase*this.velocity*10;
-            }else  if(player.position == 2){
-                player.points+=this.velocity*10;
-            }else  if(player.position == 3){
-                player.points+=this.velocity*7;
-            }else  if(player.position == 4){
-                player.points+=this.velocity*5;
+            if(!player.lost){
+                if(player.getY() < canvasHeight){
+                    if(player.position == 1){
+                        player.points+=this.phase*this.velocity*10;
+                    }else  if(player.position == 2){
+                        player.points+=this.velocity*10;
+                    }else  if(player.position == 3){
+                        player.points+=this.velocity*7;
+                    }else  if(player.position == 4){
+                        player.points+=this.velocity*5;
+                    }
+                    checkCollision(this,player)
+                }else{
+                    player.lost = true;
+                }
+                
+                
             }
-            checkCollision(this,player)
             const playerConnection = connections.find(conn => conn.playerId === player.playerId);
             if (playerConnection) {
                 playerConnection.sendUTF(JSON.stringify(gameData)); // Enviar la información del juego al jugador
@@ -316,14 +328,13 @@ wsServer.on('request', (request) => {
                     if (disconnectedPlayer.getY() >= canvasHeight) {
                         clearInterval(descentInterval);
                         game.removePlayer(disconnectedPlayer);
-                        console.log("Players", game.getPlayers().length)
-                        console.log("Games", games.length)
-
+                        
+                        
                     }
                 }, 50); // Ajusta el intervalo según la velocidad deseada de descenso
             }
         }
-
+        
         // Buscar y eliminar la partida en la que se encuentra el jugador que se desconecta
         const index = connections.indexOf(connection);
         if (index !== -1) {
@@ -449,19 +460,20 @@ function assignColor(numPlayers) {
 
 function handleGameAction(game, player, keysPressed) {
     // Aquí implementa la lógica para manejar las acciones del juego según las teclas presionadas
-    if (keysPressed['w'] || keysPressed['ArrowUp']) {
-        movePlayer(game,player, 'up');
+    if(!player.lost){
+        if (keysPressed['w'] || keysPressed['ArrowUp']) {
+            movePlayer(game,player, 'up');
+        }
+        if (keysPressed['a'] || keysPressed['ArrowLeft']) {
+            movePlayer(game,player, 'left');
+        }
+        if (keysPressed['s'] || keysPressed['ArrowDown']) {
+            movePlayer(game,player, 'down');
+        }
+        if (keysPressed['d'] || keysPressed['ArrowRight']) {
+            movePlayer(game,player, 'right');
+        }
     }
-    if (keysPressed['a'] || keysPressed['ArrowLeft']) {
-        movePlayer(game,player, 'left');
-    }
-    if (keysPressed['s'] || keysPressed['ArrowDown']) {
-        movePlayer(game,player, 'down');
-    }
-    if (keysPressed['d'] || keysPressed['ArrowRight']) {
-        movePlayer(game,player, 'right');
-    }
-    
     // Envía la información actualizada del juego a todos los jugadores
     game.sendGameInfo();
 }
@@ -500,21 +512,21 @@ function checkCollision(game, player, direction = null) {
     let futureY = player.getY();
     switch (direction) {
         case 'up':
-            futureY -= player.speed;
-            break;
+        futureY -= player.speed;
+        break;
         case 'down':
-            futureY += player.speed;
-            break;
+        futureY += player.speed;
+        break;
         case 'left':
-            futureX -= player.speed;
-            break;
+        futureX -= player.speed;
+        break;
         case 'right':
-            futureX += player.speed;
-            break;
+        futureX += player.speed;
+        break;
         default:
-            break;
+        break;
     }
-
+    
     // Verificar la colisión del jugador con otros jugadores en el juego
     const otherPlayers = game.getPlayers().filter(otherPlayer => otherPlayer.playerId !== player.playerId);
     for (let j = 0; j < otherPlayers.length; j++) {
@@ -524,37 +536,37 @@ function checkCollision(game, player, direction = null) {
             futureX + player.width > otherPlayer.getX() &&
             futureY < otherPlayer.getY() + otherPlayer.height &&
             futureY + player.height > otherPlayer.getY()
-        ) {
-            if (player.getY() < otherPlayer.getY() + otherPlayer.height) {
-                player.setY(player.getY() + otherPlayer.speed);
+            ) {
+                if (player.getY() < otherPlayer.getY() + otherPlayer.height) {
+                    player.setY(player.getY() + otherPlayer.speed);
+                }
+                // Hay colisión con otro jugador
+                return true;
             }
-            // Hay colisión con otro jugador
-            return true;
         }
-    }
-
-    // Verificar la colisión del jugador con los obstáculos en el juego
-    const obstacles = game.getObstacles();
-    for (let j = 0; j < obstacles.length; j++) {
-        const obstacle = obstacles[j];
-
-        if (
-            futureX < obstacle.x + obstacle.width &&
-            futureX + player.width > obstacle.x &&
-            futureY < obstacle.y + obstacle.height &&
-            futureY + player.height > obstacle.y
-        ) {
-            // Hay colisión con un obstáculo
-            // Si el jugador está colisionando por debajo del obstáculo, moverlo hacia abajo
-            if (player.getY() < obstacle.y + obstacle.height && direction == null) {
-                player.setY(player.getY() + obstacle.speed);
+        
+        // Verificar la colisión del jugador con los obstáculos en el juego
+        const obstacles = game.getObstacles();
+        for (let j = 0; j < obstacles.length; j++) {
+            const obstacle = obstacles[j];
+            
+            if (
+                futureX < obstacle.x + obstacle.width &&
+                futureX + player.width > obstacle.x &&
+                futureY < obstacle.y + obstacle.height &&
+                futureY + player.height > obstacle.y
+                ) {
+                    // Hay colisión con un obstáculo
+                    // Si el jugador está colisionando por debajo del obstáculo, moverlo hacia abajo
+                    if (player.getY() < obstacle.y + obstacle.height && direction == null) {
+                        player.setY(player.getY() + obstacle.speed);
+                    }
+                    return true;
+                }
             }
-            return true;
+            
+            // No hay colisión con otros jugadores ni con obstáculos
+            return false;
         }
-    }
-
-    // No hay colisión con otros jugadores ni con obstáculos
-    return false;
-}
-
+        
         

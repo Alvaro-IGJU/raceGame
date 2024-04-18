@@ -123,7 +123,11 @@ socket.onmessage = function (evt) {
         // Dibujar los obstáculos primero
         data.obstacles.forEach(obstacle => {
 
-
+            if(obstacle.y < 0){
+            ctx.fillStyle = "yellow";
+            ctx.fillRect(obstacle.x + (obstacle.width/2), 5, 5, 7);
+            ctx.fillRect(obstacle.x + (obstacle.width/2), 15, 5, 5);
+            }
             // Cuando la imagen termine de cargar, dibujarla en el canvas
             // Dibujar la imagen en el canvas ajustando su tamaño al ancho y alto del obstáculo
             ctx.drawImage(obstacleImg, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
@@ -159,7 +163,7 @@ socket.onmessage = function (evt) {
                 ctx.fillRect(0, player.y, canvas.width, 3);
                 ctx.font = '10px Arial';
                 ctx.fillStyle = 'yellow';
-                ctx.fillText('x' + data.phase, 1, player.y + 11);
+                ctx.fillText('x' + data.phase, 41, player.y + 12);
 
             }
 
