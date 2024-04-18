@@ -214,7 +214,17 @@ class Game {
         }, 10 /this.velocity*2)
         
     }
-    
+    isFinished(){
+        let allfinished = true;
+        this.players.forEach(player => {
+            if(allfinished){
+                allfinished = player.lost;
+            }
+                    
+        })
+
+        return allfinished;
+    }
     finish() {
         this.running = false;
         // Detener el intervalo cuando finaliza la carrera
@@ -227,8 +237,15 @@ class Game {
     
     // Función para enviar la información del juego a todos los jugadores
     sendGameInfo() {
-        
+        this.velocity = 10;
         this.sortPlayersByPosition();
+        if(this.isFinished()){
+            this.velocity = 0.3;
+            for (let i = 0; i < this.obstacles.length; i++) {
+               let obstacle = this.obstacles[i];
+               obstacle.speed = this.velocity;
+            }
+        }
         const gameData = {
             type: 'game_info',
             players: this.getPlayers(), // Obtener la información de los jugadores del juego
